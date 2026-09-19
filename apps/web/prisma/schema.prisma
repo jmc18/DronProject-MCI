@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DeviceType {
+  RASPBERRY_PI
+  ESP32
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Device {
+  id         String     @id @default(cuid())
+  deviceKey  String     @unique
+  name       String
+  type       DeviceType
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  telemetries Telemetry[]
+  flights    Flight[]
+}
+
+model Telemetry {
+  id        String   @id @default(cuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  battery   Float?
+  latitude  Float?
+  longitude Float?
+  altitude  Float?
+  rssi      Float?
+  payload   Json?
+  recordedAt DateTime @default(now())
+
+  @@index([deviceId, recordedAt])
+}
+
+model Flight {
+  id           String       @id @default(cuid())
+  deviceId     String?
+  device       Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  name         String
+  notes        String?
+  startedAt    DateTime     @default(now())
+  endedAt      DateTime?
+  inspections  Inspection[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+/// Inspección de un segmento vial. OCC vía campo `version`.
+model Inspection {
+  id        String        @id @default(cuid())
+  flightId  String?
+  flight    Flight?       @relation(fields: [flightId], references: [id], onDelete: SetNull)
+  title     String
+  location  String?
+  status    String        @default("open")
+  version   Int           @default(1)
+  images    AerialImage[]
+  reports   Report[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([flightId])
+}
+
+model AerialImage {
+  id           String      @id @default(cuid())
+  inspectionId String?
+  inspection   Inspection? @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  storageKey   String
+  originalName String?
+  mimeType     String      @default("image/jpeg")
+  width        Int?
+  height       Int?
+  sizeBytes    Int?
+  capturedAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  reports      Report[]
+
+  @@index([inspectionId])
+}
+
+/// Resultado de análisis. OCC vía campo `version`.
+model Report {
+  id            String       @id @default(cuid())
+  inspectionId  String?
+  inspection    Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  aerialImageId String?
+  aerialImage   AerialImage? @relation(fields: [aerialImageId], references: [id], onDelete: SetNull)
+  status        ReportStatus @default(PENDING)
+  summary       String?
+  preprocessMeta Json?
+  version       Int          @default(1)
+  potholes      Pothole[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([inspectionId])
+  @@index([status])
+}
+
+/// Detección / segmentación de bache. OCC vía campo `version`.
+model Pothole {
+  id         String   @id @default(cuid())
+  reportId   String
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  confidence Float?
+  bboxX      Float?
+  bboxY      Float?
+  bboxW      Float?
+  bboxH      Float?
+  maskPath   String?
+  areaPx     Float?
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([reportId])
+}
