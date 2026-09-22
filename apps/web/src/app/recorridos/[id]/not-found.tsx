@@ -9,7 +9,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/recorridos"
-        className="mt-6 inline-flex rounded-full bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
+        className="ui-button mt-6 inline-flex bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
       >
         Volver a recorridos
       </Link>

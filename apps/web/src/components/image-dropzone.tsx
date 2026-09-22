@@ -77,7 +77,7 @@ export function ImageDropzone({ files, onChange }: Props) {
               <img src={preview.url} alt={preview.file.name} className="h-28 w-full object-cover" />
               <button
                 type="button"
-                className="absolute right-1 top-1 rounded-full bg-asphalt-950/80 px-2 py-0.5 text-xs"
+                className="absolute right-1 top-1 bg-asphalt-950/80 px-2 py-0.5 text-xs"
                 onClick={() => onChange(files.filter((_, i) => i !== index))}
               >
                 Quitar

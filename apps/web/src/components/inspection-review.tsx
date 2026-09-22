@@ -51,7 +51,7 @@ export function InspectionReview({ inspection }: { inspection: InspectionReviewD
         </div>
         <a
           href={inspectionApi.pdfUrl(view.id)}
-          className="inline-flex items-center justify-center rounded-full bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
+          className="ui-button inline-flex items-center justify-center bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
         >
           Descargar informe PDF
         </a>

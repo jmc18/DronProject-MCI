@@ -60,13 +60,13 @@ export default async function HomePage() {
         <div className="flex flex-wrap gap-3 pt-2">
           <Link
             href="/recorridos/nuevo"
-            className="rounded-full bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
+            className="ui-button bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
           >
             Nuevo recorrido
           </Link>
           <Link
             href="/recorridos"
-            className="rounded-full border border-white/15 px-5 py-2.5 text-sm text-asphalt-50"
+            className="ui-button border border-white/15 px-5 py-2.5 text-sm text-asphalt-50"
           >
             Ver análisis
           </Link>

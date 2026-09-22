@@ -24,7 +24,7 @@ export default async function RecorridosPage() {
         </div>
         <Link
           href="/recorridos/nuevo"
-          className="inline-flex rounded-full bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
+          className="ui-button inline-flex bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
         >
           Nuevo recorrido
         </Link>

@@ -22,8 +22,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-orbitron)", "sans-serif"],
+        sans: ["var(--font-orbitron)", "sans-serif"],
       },
     },
   },

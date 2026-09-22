@@ -27,7 +27,7 @@ export function SiteNav() {
           ))}
           <Link
             href="/recorridos/nuevo"
-            className="rounded-full bg-signal-teal px-3 py-1.5 text-sm font-medium text-asphalt-50"
+            className="ui-button bg-signal-teal px-3 py-1.5 text-sm font-medium text-asphalt-50"
           >
             Nuevo recorrido
           </Link>
