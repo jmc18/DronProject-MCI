@@ -1,0 +1,2 @@
+# Dependencias solo para desarrollo / debugging local
+debugpy==1.8.22

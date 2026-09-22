@@ -9,7 +9,10 @@ export function SiteNav() {
   return (
     <header className="border-b border-white/10 bg-asphalt-950/60 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="text-sm uppercase tracking-[0.18em] text-signal-teal">
+        <Link
+          href="/"
+          className="font-orbitron text-sm uppercase tracking-[0.18em] text-signal-teal"
+        >
           DronProject-MCI
         </Link>
         <nav className="flex items-center gap-5 text-sm">

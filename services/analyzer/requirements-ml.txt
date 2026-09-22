@@ -1,0 +1,4 @@
+# Inferencia / entrenamiento YOLO (requiere PyTorch con wheel para tu Python).
+# En Darwin, Ultralytics 8.4+ acepta NumPy >= 2.3.5 (usamos 2.5.3 en requirements.txt).
+# Instalar: .venv/bin/pip install -r requirements-ml.txt
+ultralytics==8.4.158

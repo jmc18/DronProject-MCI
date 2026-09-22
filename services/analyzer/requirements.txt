@@ -1,8 +1,9 @@
-fastapi==0.115.12
-uvicorn[standard]==0.34.0
-python-multipart==0.0.20
-opencv-python-headless==4.11.0.86
-numpy==2.1.1
-pillow==11.1.0
-ultralytics==8.3.96
-pydantic-settings==2.8.1
+# Runtime base: FastAPI + PDI/DSP (sin PyTorch)
+# Probado con Python 3.13 (local). Docker prod usa python:3.11-slim.
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+python-multipart==0.0.32
+opencv-python-headless==5.0.0.93
+numpy==2.5.3
+pillow==12.3.0
+pydantic-settings==2.15.0

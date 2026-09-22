@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
+import { IBM_Plex_Sans, Orbitron, Source_Serif_4 } from "next/font/google";
 import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 
@@ -15,6 +15,12 @@ const display = Source_Serif_4({
   variable: "--font-display",
 });
 
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-orbitron",
+});
+
 export const metadata: Metadata = {
   title: "Monitoreo Vial con Drones",
   description:
@@ -28,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${sans.variable} ${display.variable} font-sans antialiased`}>
+      <body className={`${sans.variable} ${display.variable} ${orbitron.variable} font-sans antialiased`}>
         <SiteNav />
         {children}
       </body>

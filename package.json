@@ -1,20 +1,30 @@
 {
   "name": "dronproject-mci",
   "private": true,
-  "packageManager": "pnpm@10.28.2",
-  "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "build:web": "pnpm --filter web build",
-    "db:up": "docker compose up -d postgres mosquitto",
-    "stack:up": "docker compose up -d --build",
-    "stack:down": "docker compose down",
-    "stack:logs": "docker compose logs -f"
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=12"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma"
-    ]
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:python": "cd services/analyzer && (test -d .venv && . .venv/bin/activate; uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+    "build:web": "pnpm --filter web build",
+    "docker:up": "docker compose up -d postgres mosquitto",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f postgres mosquitto",
+    "docker:prod": "docker compose --profile prod up -d --build",
+    "db:up": "docker compose up -d postgres mosquitto",
+    "stack:up": "docker compose --profile prod up -d --build",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f",
+    "prisma:generate": "pnpm --filter web prisma:generate",
+    "prisma:migrate": "pnpm --filter web prisma:migrate",
+    "prisma:deploy": "pnpm --filter web prisma:deploy",
+    "setup:web-env": "test -f apps/web/.env || cp apps/web/.env.example apps/web/.env",
+    "setup:analyzer-venv": "bash services/analyzer/scripts/setup_venv.sh",
+    "setup:analyzer-env": "test -f services/analyzer/.env || cp services/analyzer/.env.example services/analyzer/.env",
+    "update:deps": "pnpm update -r --latest"
   }
 }

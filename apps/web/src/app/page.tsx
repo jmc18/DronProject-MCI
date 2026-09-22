@@ -47,8 +47,10 @@ export default async function HomePage() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col justify-center gap-10 px-6 py-16">
       <header className="space-y-4">
-        <p className="text-sm uppercase tracking-[0.2em] text-signal-teal">DronProject-MCI</p>
-        <h1 className="font-display text-4xl leading-tight text-asphalt-50 md:text-5xl">
+        <p className="font-orbitron text-sm uppercase tracking-[0.2em] text-signal-teal">
+          DronProject-MCI
+        </p>
+        <h1 className="font-orbitron text-4xl leading-tight text-asphalt-50 md:text-5xl">
           {appName}
         </h1>
         <p className="max-w-xl text-lg text-[color:var(--muted)]">

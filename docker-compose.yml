@@ -28,7 +28,10 @@ services:
       - "1883:1883"
     mem_limit: 64m
 
+  # Perfil `prod`: imágenes Docker (VPS / stack completo). En desarrollo local
+  # Next.js y el analyzer se ejecutan en el host (hot reload + breakpoints).
   analyzer:
+    profiles: ["prod"]
     build:
       context: ./services/analyzer
       dockerfile: Dockerfile
@@ -51,6 +54,7 @@ services:
     mem_limit: 1536m
 
   web:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: apps/web/Dockerfile

@@ -14,9 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements.txt requirements-ml.txt ./
 RUN pip install --upgrade pip \
-  && pip install -r requirements.txt
+  && pip install -r requirements.txt \
+  && pip install -r requirements-ml.txt
 
 COPY app ./app
 RUN mkdir -p /app/models

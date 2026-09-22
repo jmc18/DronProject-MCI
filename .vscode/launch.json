@@ -1,0 +1,79 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: Debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm exec next dev",
+      "cwd": "${workspaceFolder}/apps/web",
+      "envFile": "${workspaceFolder}/apps/web/.env"
+    },
+    {
+      "name": "Next.js: Debug (attach)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}/apps/web"
+    },
+    {
+      "name": "Python: Debug Analyzer",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/services/analyzer",
+      "envFile": "${workspaceFolder}/services/analyzer/.env",
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/services/analyzer/.venv/bin/python"
+    },
+    {
+      "name": "Python: Analyzer Watch",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/services/analyzer",
+      "envFile": "${workspaceFolder}/services/analyzer/.env",
+      "justMyCode": false,
+      "subProcess": true,
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/services/analyzer/.venv/bin/python"
+    },
+    {
+      "name": "Python: Train YOLO (script)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/services/analyzer/scripts/train_pothole.py",
+      "cwd": "${workspaceFolder}/services/analyzer",
+      "envFile": "${workspaceFolder}/services/analyzer/.env",
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/services/analyzer/.venv/bin/python"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Dev: Infra + Next + Analyzer",
+      "preLaunchTask": "Docker: Start Services",
+      "configurations": ["Next.js: Debug", "Python: Analyzer Watch"],
+      "stopAll": true
+    }
+  ]
+}

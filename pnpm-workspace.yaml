@@ -1,2 +1,14 @@
 packages:
   - "apps/*"
+
+# pnpm 12+: settings de workspace
+shamefullyHoist: true
+strictPeerDependencies: false
+packageImportMethod: copy
+trustLockfile: true
+
+# Scripts de build permitidos (reemplaza onlyBuiltDependencies)
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
