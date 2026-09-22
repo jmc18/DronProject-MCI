@@ -21,14 +21,45 @@ export type {
   Telemetry,
 };
 
+export type ReportWithPotholes = Report & { potholes: Pothole[] };
+
+export type AerialImageWithReports = AerialImage & {
+  reports: ReportWithPotholes[];
+};
+
+export type InspectionDetail = Inspection & {
+  images: AerialImageWithReports[];
+};
+
+export type InspectionListItem = Inspection & {
+  imageCount: number;
+  potholeCount: number;
+  latestReportStatus: ReportStatus | null;
+};
+
 export interface InspectionRepository {
   create(data: { title: string; location?: string; flightId?: string }): Promise<Inspection>;
   findById(id: string): Promise<Inspection | null>;
+  list(): Promise<InspectionListItem[]>;
+  findDetail(id: string): Promise<InspectionDetail | null>;
   updateWithVersion(
     id: string,
     expectedVersion: number,
     data: { title?: string; location?: string; status?: string },
   ): Promise<Inspection>;
+}
+
+export interface AerialImageRepository {
+  create(data: {
+    inspectionId?: string;
+    storageKey: string;
+    originalName?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+    width?: number;
+    height?: number;
+  }): Promise<AerialImage>;
+  findById(id: string): Promise<AerialImage | null>;
 }
 
 export interface ReportRepository {
@@ -95,6 +126,7 @@ export interface StorageService {
     mimeType: string;
   }): Promise<StoredFile>;
   resolvePath(storageKey: string): string;
+  read(storageKey: string): Promise<Buffer>;
 }
 
 export interface AnalyzerDetection {
@@ -115,6 +147,24 @@ export interface AnalyzerResponse {
 export interface AnalyzerClient {
   health(): Promise<boolean>;
   analyze(image: Buffer, filename: string): Promise<AnalyzerResponse>;
+}
+
+export interface AnalyzedImageResult {
+  aerialImage: AerialImage;
+  report: Report;
+  potholes: Pothole[];
+  analysis?: AnalyzerResponse;
+}
+
+export interface AnalyzeImageService {
+  analyzeFile(params: {
+    inspectionId: string;
+    file: { buffer: Buffer; originalName: string; mimeType: string };
+  }): Promise<AnalyzedImageResult>;
+}
+
+export interface PdfReportService {
+  render(detail: InspectionDetail): Promise<Buffer>;
 }
 
 export interface IotIngestPayload {

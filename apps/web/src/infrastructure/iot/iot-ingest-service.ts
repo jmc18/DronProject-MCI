@@ -1,6 +1,7 @@
-import type { PrismaClient, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { UnauthorizedDeviceError } from "@/domain/errors";
 import type {
+  AerialImageRepository,
   AnalyzerClient,
   DeviceRepository,
   InspectionRepository,
@@ -17,9 +18,9 @@ import type {
  */
 export class DefaultIotIngestService implements IotIngestService {
   constructor(
-    private readonly db: PrismaClient,
     private readonly devices: DeviceRepository,
     private readonly inspections: InspectionRepository,
+    private readonly images: AerialImageRepository,
     private readonly reports: ReportRepository,
     private readonly storage: StorageService,
     private readonly analyzer: AnalyzerClient,
@@ -57,14 +58,12 @@ export class DefaultIotIngestService implements IotIngestService {
       });
       result.inspection = inspection;
 
-      const aerialImage = await this.db.aerialImage.create({
-        data: {
-          inspectionId: inspection.id,
-          storageKey: stored.storageKey,
-          originalName: payload.image.originalName,
-          mimeType: stored.mimeType,
-          sizeBytes: stored.sizeBytes,
-        },
+      const aerialImage = await this.images.create({
+        inspectionId: inspection.id,
+        storageKey: stored.storageKey,
+        originalName: payload.image.originalName,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
       });
       result.aerialImage = aerialImage;
 

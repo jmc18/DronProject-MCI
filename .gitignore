@@ -20,6 +20,7 @@ uploads/
 *.onnx
 services/analyzer/models/**
 !services/analyzer/models/.gitkeep
+services/analyzer/runs/
 
 # Dataset archives (large)
 *.zip
@@ -47,3 +48,4 @@ apps/web/tsconfig.tsbuildinfo
 
 # Docker
 mosquitto_data/
+Pothole_Segmentation_YOLOv8

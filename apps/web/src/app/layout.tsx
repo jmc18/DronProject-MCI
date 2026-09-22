@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
+import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 
 const sans = IBM_Plex_Sans({
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${sans.variable} ${display.variable} font-sans antialiased`}>
+        <SiteNav />
         {children}
       </body>
     </html>

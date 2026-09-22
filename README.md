@@ -38,7 +38,7 @@ curl -s http://127.0.0.1:3000/api/health
 curl -s http://127.0.0.1:8000/health
 ```
 
-- UI / API web: `http://TU_VPS:3000`
+- UI / API web: `http://TU_VPS:3000` — recorridos, galería de análisis e informe PDF
 - Analyzer (solo localhost por defecto): `http://127.0.0.1:8000`
 - MQTT: puerto `1883` (expuesto para dispositivos edge)
 - Postgres: solo `127.0.0.1:5432` (no expuesto a Internet)
@@ -59,14 +59,27 @@ docker compose down
 
 ### Pesos YOLOv8
 
-Coloca el archivo de pesos en el volumen del analyzer, por ejemplo:
+El analyzer espera `pothole_seg.pt`. Entrena un modelo de segmentación de baches partiendo de **yolov8n-seg.pt** (preentrenamiento COCO-seg) y el dataset local `Pothole_Segmentation_YOLOv8/`:
 
 ```bash
-docker compose cp ./pothole_seg.pt analyzer:/app/models/pothole_seg.pt
+cd services/analyzer
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python scripts/train_pothole.py --epochs 50 --device cpu
+```
+
+En CPU puede tardar varias horas. Con GPU: `--device 0`. Comprueba el script con `--epochs 1 --batch 2`.
+
+Copia el resultado al contenedor:
+
+```bash
+docker compose cp ./services/analyzer/models/pothole_seg.pt analyzer:/app/models/pothole_seg.pt
 docker compose restart analyzer
 ```
 
 Sin pesos, el pipeline PDI/DSP funciona y `/analyze` devuelve `detections: []` con un `warning`.
+
+La UI de revisión está en `/recorridos`. Cada recorrido genera un PDF en `/api/inspections/:id/pdf`.
 
 ### Notas de recursos (VPS)
 
@@ -110,8 +123,10 @@ Las tablas `Inspection`, `Report` y `Pothole` incluyen `version`. Las actualizac
 ## Estructura
 
 ```
-apps/web/              Next.js + Prisma + DI
+apps/web/              Next.js + Prisma + DI (UI /recorridos e informe PDF)
 services/analyzer/     FastAPI PDI/DSP + YOLO
+services/analyzer/scripts/train_pothole.py
+Pothole_Segmentation_YOLOv8/  Dataset de fine-tune
 devices/               Stubs Raspberry Pi / ESP32
 infra/mosquitto/       Config MQTT
 docker-compose.yml     Stack unificado VPS

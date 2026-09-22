@@ -1,6 +1,8 @@
+import { readFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { InvalidStorageKeyError } from "@/domain/errors";
 import type { StorageService, StoredFile } from "@/domain/ports";
 
 export class LocalStorageService implements StorageService {
@@ -29,6 +31,20 @@ export class LocalStorageService implements StorageService {
   }
 
   resolvePath(storageKey: string): string {
-    return path.join(this.uploadDir, storageKey);
+    return this.assertInsideUploadDir(storageKey);
+  }
+
+  async read(storageKey: string): Promise<Buffer> {
+    return readFile(this.assertInsideUploadDir(storageKey));
+  }
+
+  private assertInsideUploadDir(storageKey: string): string {
+    const root = path.resolve(this.uploadDir);
+    const absolutePath = path.resolve(root, storageKey);
+    const relative = path.relative(root, absolutePath);
+    if (relative.startsWith("..") || path.isAbsolute(relative)) {
+      throw new InvalidStorageKeyError();
+    }
+    return absolutePath;
   }
 }
