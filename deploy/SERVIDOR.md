@@ -8,9 +8,9 @@ Los puertos 3000 y 6071 ya los usan otros sitios de la misma máquina. Esta app 
 |---|---|
 | Sitio público | `https://bachedron.javier.tech` → `127.0.0.1:3010` |
 | Worker YOLO | solo `127.0.0.1:8010` (no va en nginx) |
-| Vídeos | `/var/www/javier.tech/bachedron/data/jobs` |
-| Web | `/var/www/javier.tech/bachedron/web` |
-| Analyzer | `/var/www/javier.tech/bachedron/analyzer` |
+| Vídeos | `/var/www/javiermc/bachedron/data/jobs` |
+| Web | `/var/www/javiermc/bachedron/web` |
+| Analyzer | `/var/www/javiermc/bachedron/analyzer` |
 
 ## 1. DNS y certificado
 
@@ -27,7 +27,7 @@ Ajusta los `-d` a los nombres que ya cubre ese certificado.
 
 En el servidor hacen falta `node`, `nginx`, `ffmpeg` (`ffmpeg` y `ffprobe` en el `PATH`), `python3` con `venv`, y PostgreSQL.
 
-El usuario del deploy es `jmcdeploy`, el mismo de los otros sitios. Tiene que poder escribir en `/var/www/javier.tech/bachedron` y reiniciar estos dos servicios con `sudo` sin contraseña:
+El usuario del deploy es `jmcdeploy`, el mismo de los otros sitios. Tiene que poder escribir en `/var/www/javiermc/bachedron` y reiniciar estos dos servicios con `sudo` sin contraseña:
 
 ```
 jmcdeploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart bachedron.javier.tech.service, /usr/bin/systemctl restart bachedron-analyzer.javier.tech.service
@@ -36,8 +36,8 @@ jmcdeploy ALL=(root) NOPASSWD: /usr/bin/systemctl restart bachedron.javier.tech.
 ## 3. Carpetas
 
 ```bash
-sudo mkdir -p /var/www/javier.tech/bachedron/data/jobs
-sudo chown -R jmcdeploy:jmcdeploy /var/www/javier.tech/bachedron
+sudo mkdir -p /var/www/javiermc/bachedron/data/jobs
+sudo chown -R jmcdeploy:jmcdeploy /var/www/javiermc/bachedron
 ```
 
 El `rsync` del deploy borra la web y el código del analyzer. No borra `data/jobs`, `models/`, `.venv/` ni los `.env` de esta guía.
@@ -51,7 +51,7 @@ sudo -u postgres psql -c "CREATE USER vial WITH PASSWORD 'UNA_CLAVE_LARGA';"
 sudo -u postgres psql -c "CREATE DATABASE vial_monitor OWNER vial;"
 ```
 
-## 5. `/var/www/javier.tech/bachedron/web.env`
+## 5. `/var/www/javiermc/bachedron/web.env`
 
 Lo lee systemd y también el paso de migraciones. No copies el `.env` local: ahí `JOBS_DIR` y `ANALYZER_URL` apuntan a la máquina de desarrollo, y este archivo pisa los valores de la unidad systemd.
 
@@ -65,7 +65,7 @@ NEXT_PUBLIC_MAX_UPLOAD_MB=8192
 DATABASE_URL=postgresql://vial:UNA_CLAVE_LARGA@127.0.0.1:5432/vial_monitor?schema=public
 
 ANALYZER_URL=http://127.0.0.1:8010
-JOBS_DIR=/var/www/javier.tech/bachedron/data/jobs
+JOBS_DIR=/var/www/javiermc/bachedron/data/jobs
 AUTO_MIGRATE=0
 
 API_KEY_CURRENT=UNA_API_KEY
@@ -85,15 +85,15 @@ DELETE_ORIGINAL_AFTER_DAYS=7
 `API_KEY_CURRENT` y `UPLOAD_HMAC_SECRET` son los que usa la Raspberry. La web, al subir a mano, no los pide.
 
 ```bash
-chmod 600 /var/www/javier.tech/bachedron/web.env
+chmod 600 /var/www/javiermc/bachedron/web.env
 ```
 
-## 6. `/var/www/javier.tech/bachedron/analyzer.env`
+## 6. `/var/www/javiermc/bachedron/analyzer.env`
 
 ```
 INTERNAL_TOKEN=UN_TOKEN_INTERNO
-YOLO_WEIGHTS_PATH=/var/www/javier.tech/bachedron/analyzer/models/best.pt
-WORKER_TMP_DIR=/var/www/javier.tech/bachedron/analyzer/tmp
+YOLO_WEIGHTS_PATH=/var/www/javiermc/bachedron/analyzer/models/best.pt
+WORKER_TMP_DIR=/var/www/javiermc/bachedron/analyzer/tmp
 WEB_INTERNAL_URL=http://127.0.0.1:3010
 
 FRAME_STRIDE=15
@@ -111,8 +111,8 @@ PROGRESS_INTERVAL_SEC=5
 Copia el `best.pt` a esa ruta **a mano**. El deploy no lo sube y no lo borra.
 
 ```bash
-mkdir -p /var/www/javier.tech/bachedron/analyzer/models /var/www/javier.tech/bachedron/analyzer/tmp
-chmod 600 /var/www/javier.tech/bachedron/analyzer.env
+mkdir -p /var/www/javiermc/bachedron/analyzer/models /var/www/javiermc/bachedron/analyzer/tmp
+chmod 600 /var/www/javiermc/bachedron/analyzer.env
 ```
 
 El primer deploy crea `.venv` e instala Python ahí. Torch/YOLO solo se instala si todavía no está `ultralytics`.

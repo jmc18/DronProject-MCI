@@ -34,7 +34,7 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
-          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javier.tech/bachedron/analyzer"
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javiermc/bachedron/analyzer"
           rsync -az --delete \
             --no-perms --no-owner --no-group \
             --filter 'protect .venv/' \
@@ -52,14 +52,14 @@ jobs:
             --exclude '.env.*' \
             --exclude '__pycache__/' \
             -e "ssh -p $port -i ~/.ssh/id_ed25519" \
-            services/analyzer/ "$VPS_USER@$VPS_HOST:/var/www/javier.tech/bachedron/analyzer/"
+            services/analyzer/ "$VPS_USER@$VPS_HOST:/var/www/javiermc/bachedron/analyzer/"
           ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "bash -s" <<'EOF'
           set -euo pipefail
-          if [ ! -f /var/www/javier.tech/bachedron/analyzer.env ]; then
-            echo "Falta /var/www/javier.tech/bachedron/analyzer.env (INTERNAL_TOKEN, YOLO_WEIGHTS_PATH)." >&2
+          if [ ! -f /var/www/javiermc/bachedron/analyzer.env ]; then
+            echo "Falta /var/www/javiermc/bachedron/analyzer.env (INTERNAL_TOKEN, YOLO_WEIGHTS_PATH)." >&2
             exit 1
           fi
-          cd /var/www/javier.tech/bachedron/analyzer
+          cd /var/www/javiermc/bachedron/analyzer
           if [ ! -x .venv/bin/python ]; then
             python3 -m venv .venv
           fi

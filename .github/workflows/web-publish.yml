@@ -66,7 +66,7 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
-          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javier.tech/bachedron/web /var/www/javier.tech/bachedron/data/jobs"
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javiermc/bachedron/web /var/www/javiermc/bachedron/data/jobs"
           rsync -az --delete \
             --no-perms --no-owner --no-group \
             --filter 'protect uploads/' \
@@ -78,18 +78,18 @@ jobs:
             --exclude '.env' \
             --exclude '.env.*' \
             -e "ssh -p $port -i ~/.ssh/id_ed25519" \
-            apps/web/.next/standalone/ "$VPS_USER@$VPS_HOST:/var/www/javier.tech/bachedron/web/"
+            apps/web/.next/standalone/ "$VPS_USER@$VPS_HOST:/var/www/javiermc/bachedron/web/"
           ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "bash -s" <<'EOF'
           set -euo pipefail
-          if [ ! -f /var/www/javier.tech/bachedron/web.env ]; then
-            echo "Falta /var/www/javier.tech/bachedron/web.env (DATABASE_URL, INTERNAL_TOKEN, claves de upload)." >&2
+          if [ ! -f /var/www/javiermc/bachedron/web.env ]; then
+            echo "Falta /var/www/javiermc/bachedron/web.env (DATABASE_URL, INTERNAL_TOKEN, claves de upload)." >&2
             exit 1
           fi
           set -a
           # shellcheck disable=SC1091
-          . /var/www/javier.tech/bachedron/web.env
+          . /var/www/javiermc/bachedron/web.env
           set +a
-          cd /var/www/javier.tech/bachedron/web/apps/web
+          cd /var/www/javiermc/bachedron/web/apps/web
           npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
           sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
           EOF

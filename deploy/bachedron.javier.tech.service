@@ -3,7 +3,7 @@ Description=bachedron.javier.tech
 After=network.target
 
 [Service]
-WorkingDirectory=/var/www/javier.tech/bachedron/web/apps/web
+WorkingDirectory=/var/www/javiermc/bachedron/web/apps/web
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=10
@@ -16,9 +16,9 @@ Environment=PORT=3010
 Environment=HOSTNAME=127.0.0.1
 Environment=NODE_OPTIONS=--dns-result-order=ipv4first
 Environment=ANALYZER_URL=http://127.0.0.1:8010
-Environment=JOBS_DIR=/var/www/javier.tech/bachedron/data/jobs
+Environment=JOBS_DIR=/var/www/javiermc/bachedron/data/jobs
 Environment=AUTO_MIGRATE=0
-EnvironmentFile=-/var/www/javier.tech/bachedron/web.env
+EnvironmentFile=-/var/www/javiermc/bachedron/web.env
 
 [Install]
 WantedBy=multi-user.target
