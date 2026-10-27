@@ -43,15 +43,9 @@ export function StackStatus({ initial }: Props) {
         <StatusRow label="PostgreSQL" ok={snapshot.checks.database} />
         <StatusRow label="Analyzer FastAPI" ok={snapshot.checks.analyzer} />
         <li className="flex justify-between gap-4 border-b border-white/5 py-2">
-          <span className="text-[color:var(--muted)]">Recorridos / baches</span>
+          <span className="text-[color:var(--muted)]">Jobs / baches (página)</span>
           <span className="text-asphalt-100">
             {photos} / {holes}
-          </span>
-        </li>
-        <li className="flex justify-between gap-4 border-b border-white/5 py-2">
-          <span className="text-[color:var(--muted)]">MQTT (tópicos)</span>
-          <span className="text-right font-mono text-xs text-asphalt-100">
-            {snapshot.checks.mqttTopics.join(", ")}
           </span>
         </li>
       </ul>

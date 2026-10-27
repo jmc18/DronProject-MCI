@@ -4,7 +4,10 @@ from app.api.routes import router
 
 app = FastAPI(
     title="Vial Analyzer",
-    description="Pipeline PDI/DSP + YOLOv8-seg para detección de baches",
-    version="0.1.0",
+    description="Pipeline vídeo MP4 8K (tiling + tracking) + YOLO; imagen /analyze deprecated",
+    version="0.2.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 app.include_router(router)

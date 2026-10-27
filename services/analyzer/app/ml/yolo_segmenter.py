@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from app.core.config import default_weights_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,6 +26,11 @@ class YoloPotholeSegmenter:
     def _load(self) -> None:
         path = Path(self.weights_path)
         if not path.is_file():
+            fallback = Path(default_weights_path())
+            if fallback.is_file():
+                path = fallback
+                self.weights_path = str(fallback)
+        if not path.is_file():
             self.warning = (
                 f"Pesos no encontrados en {self.weights_path}. "
                 "Modo stub activo (sin segmentación real)."
@@ -41,11 +48,14 @@ class YoloPotholeSegmenter:
             logger.exception(self.warning)
             self.model = None
 
-    def predict(self, image_bgr: np.ndarray) -> list[dict[str, Any]]:
+    def predict(self, image_bgr: np.ndarray, imgsz: int | None = None) -> list[dict[str, Any]]:
         if self.model is None:
             return []
 
-        results = self.model.predict(source=image_bgr, verbose=False)
+        kwargs: dict[str, Any] = {"source": image_bgr, "verbose": False}
+        if imgsz is not None:
+            kwargs["imgsz"] = imgsz
+        results = self.model.predict(**kwargs)
         detections: list[dict[str, Any]] = []
 
         for result in results:

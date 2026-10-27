@@ -1,5 +1,7 @@
 import type { AnalyzerClient, AnalyzerResponse } from "@/domain/ports";
+import { getInternalToken } from "@/lib/env";
 
+/** @deprecated Preferir HttpJobClient + pipeline de vídeo. */
 export class HttpAnalyzerClient implements AnalyzerClient {
   constructor(private readonly baseUrl: string) {}
 
@@ -26,6 +28,9 @@ export class HttpAnalyzerClient implements AnalyzerClient {
 
     const res = await fetch(`${this.baseUrl}/analyze`, {
       method: "POST",
+      headers: {
+        "x-internal-token": getInternalToken(),
+      },
       body: form,
       signal: AbortSignal.timeout(120_000),
     });

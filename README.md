@@ -1,15 +1,16 @@
 # DronProject-MCI
 
-Sistema de **Monitoreo de Infraestructura Vial mediante Drones**: ingestión IoT (Raspberry Pi / ESP32), almacenamiento en PostgreSQL, análisis PDI/DSP + YOLOv8-seg (FastAPI) y UI/API en Next.js.
+Sistema de **Monitoreo de Infraestructura Vial mediante Drones**: upload de vídeo MP4 (hasta 8K), jobs asíncronos con YOLOv8-seg (tiling + tracking), almacenamiento en PostgreSQL y UI/API en Next.js.
+
+> **Deprecated:** el flujo por imágenes (`/api/iot/ingest`, `/api/analyze`, upload de fotos) sigue en el repo protegido con `x-api-key`, pero el camino soportado es `POST /api/videos/upload`.
 
 ## Arquitectura
 
 | Componente | Rol | Dónde corre en desarrollo |
 |------------|-----|---------------------------|
-| **Next.js** | Frontend + API + Prisma + IoT | Host (`pnpm dev`) con hot reload |
+| **Next.js** | Frontend + API + Prisma | Host (`pnpm dev`) con hot reload |
 | **PostgreSQL** | Base de datos (solo vía Prisma) | Docker (volumen `pgdata`) |
-| **Mosquitto** | Broker MQTT | Docker |
-| **Analyzer (Python)** | YOLO + PDI/DSP (no es el backend principal) | Host (venv + uvicorn `--reload`) |
+| **Analyzer (Python)** | YOLO vídeo (no es el backend principal) | Host (venv + uvicorn `--reload`) |
 
 ```text
 Cursor / VS Code
@@ -17,8 +18,7 @@ Cursor / VS Code
    └── Python   → debugger + breakpoints (YOLO / PDI)
 
 Docker
-   ├── PostgreSQL  (persistente)
-   └── Mosquitto
+   └── PostgreSQL  (persistente)
 ```
 
 > No hay integración LLM en el código actual. Si se añade después, irá en el analyzer o como servicio aparte, no sustituyendo a Next/Prisma.
@@ -35,12 +35,13 @@ pnpm setup:web-env
 pnpm setup:analyzer-env
 pnpm install
 
-# Infra (solo Postgres + Mosquitto; NO reconstruye imágenes de app)
+# Infra (solo Postgres; NO reconstruye imágenes de app)
 pnpm docker:up
 
-# Prisma
+# Cliente Prisma (una vez / tras cambiar schema)
 pnpm prisma:generate
-pnpm prisma:migrate
+# Las migraciones se aplican solas al hacer `pnpm dev` / Docker (como EF Core Migrate).
+# Solo usa `pnpm prisma:migrate` cuando CREAS una migración nueva en desarrollo.
 
 # Analyzer (venv)
 pnpm setup:analyzer-venv
@@ -53,7 +54,7 @@ Opcional: pesos YOLO en `services/analyzer/models/pothole_seg.pt`. En macOS Inte
 ### 2. Cada día
 
 ```bash
-# Terminal A — infra (si no está arriba)
+# Terminal A — Postgres (si no está arriba)
 pnpm docker:up
 
 # Terminal B — Next.js (hot reload)
@@ -84,20 +85,20 @@ docker compose ps
 
 - UI: http://127.0.0.1:3000  
 - Analyzer: http://127.0.0.1:8000  
-- MQTT: `1883`  
-- Postgres: `127.0.0.1:5432` (volumen `pgdata`; `docker compose down` **sin** `-v` conserva datos)
+- Postgres: `127.0.0.1:5433` (el contenedor escucha 5432 por dentro; volumen `pgdata`; `docker compose down` **sin** `-v` conserva datos)
 
 ### Scripts útiles
 
 | Script | Qué hace |
 |--------|----------|
-| `pnpm docker:up` | Postgres + Mosquitto |
+| `pnpm docker:up` | Postgres |
 | `pnpm docker:down` | Baja infra (conserva volúmenes) |
 | `pnpm docker:logs` | Logs de infra |
 | `pnpm dev` / `pnpm dev:web` | Next.js watch |
 | `pnpm dev:python` | Uvicorn `--reload` |
 | `pnpm prisma:generate` | Cliente Prisma |
-| `pnpm prisma:migrate` | Migraciones en desarrollo |
+| `pnpm prisma:migrate` | **Crear** migración nueva (`migrate dev`) |
+| `pnpm prisma:deploy` / arranque | **Aplicar** pendientes (`migrate deploy`; automático en `pnpm dev` y Docker) |
 | `pnpm docker:prod` / `pnpm stack:up` | Stack completo en Docker (`--profile prod`) |
 
 ---
@@ -125,14 +126,29 @@ docker compose --profile prod restart analyzer
 
 ---
 
-## IoT (edge)
+## Upload de vídeo (camino soportado)
+
+`POST /api/videos/upload` — multipart campo `video`, headers `x-api-key`, `Idempotency-Key`, firma HMAC (`x-timestamp`, `x-signature`, `x-content-sha256`).
+
+Ver variables en `.env.example` (`MAX_UPLOAD_MB`, `API_KEY_*`, `INTERNAL_TOKEN`, etc.).
+
+### Roadmap v2 (no implementado)
+
+Subida por chunks reanudable (`Upload-Offset` / sesiones). La interfaz `ResumableUploadSession` está preparada en el dominio; el contrato v1 multipart no cambia.
+
+## IoT (edge) — deprecated (imágenes)
 
 - Raspberry Pi: [`devices/raspberry-pi`](devices/raspberry-pi)
 - ESP32: [`devices/esp32`](devices/esp32)
 
-Ingestión HTTP: `POST /api/iot/ingest` (`deviceKey`, `deviceToken`, imagen opcional).
+Ingestión HTTP legacy: `POST /api/iot/ingest` (requiere `x-api-key`). Migrar a `/api/videos/upload`.
 
-El bridge MQTT en Next es stub documentado; Mosquitto sí corre para dispositivos y pruebas.
+El broker MQTT (Mosquitto) se retiró del stack. La telemetría, si se necesita, va por HTTP.
+
+### Criterio de conteo de baches (vídeo)
+
+- `totalDetections`: cajas detectadas en todos los frames muestreados (tras NMS por tile).
+- `totalPotholes`: tracks únicos (ByteTrack/BoT-SORT). Un mismo bache visto en N frames cuenta como **1**.
 
 ## OCC
 
@@ -145,7 +161,6 @@ apps/web/                 Next.js + Prisma + DI
 services/analyzer/        FastAPI PDI/DSP + YOLO
 services/analyzer/scripts/train_pothole.py
 devices/                  Stubs edge
-infra/mosquitto/          Config MQTT
 .vscode/                  Launch + tasks de desarrollo
 docker-compose.yml        Infra por defecto; apps con --profile prod
 ```

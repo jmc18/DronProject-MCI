@@ -12,7 +12,9 @@ export const TOKENS = {
   AnalyzeImageService: Symbol.for("AnalyzeImageService"),
   PdfReportService: Symbol.for("PdfReportService"),
   IotIngestService: Symbol.for("IotIngestService"),
-  MqttBridge: Symbol.for("MqttBridge"),
+  VideoJobRepository: Symbol.for("VideoJobRepository"),
+  IdempotencyRepository: Symbol.for("IdempotencyRepository"),
+  JobNotifier: Symbol.for("JobNotifier"),
 } as const;
 
 export type Token = (typeof TOKENS)[keyof typeof TOKENS];

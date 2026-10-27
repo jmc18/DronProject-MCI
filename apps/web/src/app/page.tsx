@@ -2,7 +2,7 @@ import Link from "next/link";
 import { StackStatus } from "@/components/stack-status";
 import { createAppContainer } from "@/di/providers";
 import { TOKENS } from "@/di/tokens";
-import type { AnalyzerClient, InspectionRepository, MqttBridge } from "@/domain/ports";
+import type { AnalyzerClient, VideoJobRepository } from "@/domain/ports";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,7 @@ export const dynamic = "force-dynamic";
 async function getStatus() {
   const container = createAppContainer();
   const analyzer = container.resolve<AnalyzerClient>(TOKENS.AnalyzerClient);
-  const mqtt = container.resolve<MqttBridge>(TOKENS.MqttBridge);
-  const inspections = container.resolve<InspectionRepository>(TOKENS.InspectionRepository);
+  const videoJobs = container.resolve<VideoJobRepository>(TOKENS.VideoJobRepository);
 
   let database = false;
   try {
@@ -21,9 +20,8 @@ async function getStatus() {
     database = false;
   }
 
-  const recorridos = database ? await inspections.list() : [];
+  const jobs = database ? await videoJobs.list({ page: 1, pageSize: 15 }) : { items: [], total: 0 };
   const analyzerOk = await analyzer.health();
-  const mqttTopics = mqtt.describeTopics();
 
   return {
     health: {
@@ -32,11 +30,13 @@ async function getStatus() {
       checks: {
         database,
         analyzer: analyzerOk,
-        mqttTopics,
       },
     },
-    recorridoCount: recorridos.length,
-    potholeCount: recorridos.reduce((sum, item) => sum + item.potholeCount, 0),
+    recorridoCount: jobs.total,
+    potholeCount: jobs.items.reduce((sum, j) => {
+      const meta = (j.meta ?? {}) as { report?: { totalPotholes?: number } };
+      return sum + (meta.report?.totalPotholes ?? 0);
+    }, 0),
   };
 }
 
@@ -54,21 +54,21 @@ export default async function HomePage() {
           {appName}
         </h1>
         <p className="max-w-xl text-lg text-[color:var(--muted)]">
-          Sube las fotos de un recorrido, revisa los baches detectados sobre cada imagen y
-          descarga un informe PDF listo para entregar.
+          Sube vídeos MP4 (hasta 8K), revisa el progreso del análisis con tiling YOLO y
+          reproduce el preview anotado en el navegador.
         </p>
         <div className="flex flex-wrap gap-3 pt-2">
           <Link
-            href="/recorridos/nuevo"
+            href="/videos/nuevo"
             className="ui-button bg-signal-teal px-5 py-2.5 text-sm font-medium text-asphalt-50"
           >
-            Nuevo recorrido
+            Subir vídeo
           </Link>
           <Link
-            href="/recorridos"
+            href="/videos"
             className="ui-button border border-white/15 px-5 py-2.5 text-sm text-asphalt-50"
           >
-            Ver análisis
+            Ver jobs
           </Link>
         </div>
       </header>

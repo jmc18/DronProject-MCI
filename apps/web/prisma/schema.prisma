@@ -129,3 +129,51 @@ model Pothole {
 
   @@index([reportId])
 }
+
+enum VideoJobStatus {
+  PENDING
+  QUEUED
+  VALIDATING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+/// Job de análisis de vídeo MP4 (pipeline 8K).
+model VideoJob {
+  id               String         @id @default(cuid())
+  originalFilename String
+  storageDir       String
+  status           VideoJobStatus @default(PENDING)
+  model            String         @default("pothole_seg")
+  contentSha256    String
+  sizeBytes        BigInt?
+  meta             Json?
+  progress         Float          @default(0)
+  errorMessage     String?
+  warning          String?
+  timeoutAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([contentSha256])
+  @@map("video_jobs")
+}
+
+/// Claves de idempotencia para uploads (TTL 24h).
+model IdempotencyKey {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  contentSha256  String
+  responseStatus Int
+  responseBody   Json
+  jobId          String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}

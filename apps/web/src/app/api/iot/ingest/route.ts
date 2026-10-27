@@ -3,16 +3,24 @@ import { createAppContainer } from "@/di/providers";
 import { TOKENS } from "@/di/tokens";
 import { OptimisticLockError, UnauthorizedDeviceError } from "@/domain/errors";
 import type { IotIngestService } from "@/domain/ports";
+import { requireApiKeyHeader } from "@/lib/security/api-key";
 import type { DeviceType } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Ingestión IoT desde Raspberry Pi / agentes edge.
+ * @deprecated Preferir POST /api/videos/upload (pipeline MP4 8K).
+ * Ingestión IoT por imagen — se retirará en una fase posterior.
+ * Requiere header x-api-key (API_KEY_CURRENT / PREVIOUS).
  * Multipart: deviceKey, deviceToken, opcionales de telemetría + file (imagen).
  */
 export async function POST(request: Request) {
+  const auth = requireApiKeyHeader(request);
+  if (!auth.ok) {
+    return NextResponse.json(auth.body, { status: auth.status });
+  }
+
   try {
     const form = await request.formData();
     const deviceKey = String(form.get("deviceKey") ?? "");

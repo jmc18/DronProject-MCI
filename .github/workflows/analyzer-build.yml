@@ -1,0 +1,43 @@
+name: Build Analyzer
+
+on:
+  push:
+    branches:
+      - "deploy/**"
+    paths:
+      - "services/analyzer/**"
+      - "deploy/bachedron-analyzer.javier.tech.service"
+      - ".github/workflows/analyzer-build.yml"
+      - ".github/workflows/analyzer-publish.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-analyzer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check syntax
+        working-directory: services/analyzer
+        run: python -m compileall -q app
+
+  publish:
+    name: Publish Analyzer
+    needs: build
+    uses: ./.github/workflows/analyzer-publish.yml
+    secrets: inherit
+    with:
+      deploy: ${{ startsWith(github.ref, 'refs/heads/deploy/') }}

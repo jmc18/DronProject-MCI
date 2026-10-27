@@ -1,23 +1,5 @@
-# ESP32 — telemetría IoT (stub)
+# ESP32 — telemetría (stub, fuera del stack)
 
-Nodo opcional para telemetría (batería, heartbeat, RSSI). La captura de imágenes
-aéreas queda a cargo de la Raspberry Pi.
+El broker Mosquitto se retiró de este proyecto. El sketch `telemetry_sketch/telemetry_sketch.ino` publicaba MQTT y **ya no tiene destino** en el servidor.
 
-## Tópico MQTT
-
-`vial/{deviceKey}/telemetry`
-
-Payload JSON de ejemplo:
-
-```json
-{
-  "battery": 91.2,
-  "rssi": -55,
-  "heartbeat": true
-}
-```
-
-## Sketch
-
-Ver `telemetry_sketch/telemetry_sketch.ino` (Arduino IDE / PlatformIO).
-Ajusta `WIFI_SSID`, `WIFI_PASS`, `MQTT_HOST` y `DEVICE_KEY`.
+La telemetría, si se retoma, debería ir por HTTP hacia Next.js (mismo patrón que el agente de la Raspberry Pi).

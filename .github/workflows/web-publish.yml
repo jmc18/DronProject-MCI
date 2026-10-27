@@ -1,0 +1,95 @@
+name: Publish Web
+
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        description: Copy the standalone build to the VPS and restart the site
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish
+        env:
+          DATABASE_URL: postgresql://vial:build@127.0.0.1:5432/vial_monitor?schema=public
+          NEXT_PUBLIC_APP_NAME: Monitoreo Vial con Drones
+          NEXT_PUBLIC_MAX_UPLOAD_MB: "8192"
+        run: |
+          set -euo pipefail
+          pnpm --filter web build
+          standalone="apps/web/.next/standalone"
+          mkdir -p "$standalone/apps/web/.next"
+          cp -a apps/web/.next/static "$standalone/apps/web/.next/static"
+          if [ -d apps/web/public ]; then
+            cp -a apps/web/public "$standalone/apps/web/public"
+          fi
+          mkdir -p "$standalone/apps/web/prisma"
+          cp -a apps/web/prisma/. "$standalone/apps/web/prisma/"
+
+      - name: Deploy to VPS
+        if: inputs.deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          port="${VPS_PORT:-22}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javier.tech/bachedron/web /var/www/javier.tech/bachedron/data/jobs"
+          rsync -az --delete \
+            --no-perms --no-owner --no-group \
+            --filter 'protect uploads/' \
+            --filter 'protect apps/web/uploads/' \
+            --filter 'protect data/' \
+            --exclude 'uploads/' \
+            --exclude 'apps/web/uploads/' \
+            --exclude 'data/' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            -e "ssh -p $port -i ~/.ssh/id_ed25519" \
+            apps/web/.next/standalone/ "$VPS_USER@$VPS_HOST:/var/www/javier.tech/bachedron/web/"
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "bash -s" <<'EOF'
+          set -euo pipefail
+          if [ ! -f /var/www/javier.tech/bachedron/web.env ]; then
+            echo "Falta /var/www/javier.tech/bachedron/web.env (DATABASE_URL, INTERNAL_TOKEN, claves de upload)." >&2
+            exit 1
+          fi
+          set -a
+          # shellcheck disable=SC1091
+          . /var/www/javier.tech/bachedron/web.env
+          set +a
+          cd /var/www/javier.tech/bachedron/web/apps/web
+          npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
+          sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
+          EOF

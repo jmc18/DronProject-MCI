@@ -6,22 +6,26 @@ import type {
   AnalyzeImageService,
   AnalyzerClient,
   DeviceRepository,
+  IdempotencyRepository,
   InspectionRepository,
   IotIngestService,
-  MqttBridge,
+  JobNotifier,
   PdfReportService,
   ReportRepository,
   StorageService,
+  VideoJobRepository,
 } from "@/domain/ports";
 import { DefaultAnalyzeImageService } from "@/infrastructure/analyzer/analyze-image-service";
 import { HttpAnalyzerClient } from "@/infrastructure/analyzer/http-analyzer-client";
+import { HttpJobClient } from "@/infrastructure/analyzer/http-job-client";
 import { DefaultIotIngestService } from "@/infrastructure/iot/iot-ingest-service";
-import { StubMqttBridge } from "@/infrastructure/iot/mqtt-bridge";
 import { PdfLibReportService } from "@/infrastructure/pdf/pdf-lib-report-service";
 import { PrismaAerialImageRepository } from "@/infrastructure/prisma/aerial-image-repository";
 import { PrismaDeviceRepository } from "@/infrastructure/prisma/device-repository";
+import { PrismaIdempotencyRepository } from "@/infrastructure/prisma/idempotency-repository";
 import { PrismaInspectionRepository } from "@/infrastructure/prisma/inspection-repository";
 import { PrismaReportRepository } from "@/infrastructure/prisma/report-repository";
+import { PrismaVideoJobRepository } from "@/infrastructure/prisma/video-job-repository";
 import { LocalStorageService } from "@/infrastructure/storage/local-storage-service";
 import { prisma } from "@/lib/prisma";
 
@@ -37,7 +41,6 @@ export function createAppContainer(): Container {
 
   const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
   const analyzerUrl = process.env.ANALYZER_URL || "http://localhost:8000";
-  const mqttUrl = process.env.MQTT_URL || "mqtt://localhost:1883";
   const deviceToken = process.env.IOT_DEVICE_TOKEN || "change_me_device_token";
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "Monitoreo Vial con Drones";
 
@@ -47,7 +50,6 @@ export function createAppContainer(): Container {
   const devices = new PrismaDeviceRepository(prisma);
   const storage = new LocalStorageService(uploadDir);
   const analyzer = new HttpAnalyzerClient(analyzerUrl);
-  const mqtt = new StubMqttBridge(mqttUrl);
   const analyzeImages = new DefaultAnalyzeImageService(
     inspections,
     aerialImages,
@@ -76,9 +78,13 @@ export function createAppContainer(): Container {
   container.register<AnalyzeImageService>(TOKENS.AnalyzeImageService, analyzeImages);
   container.register<PdfReportService>(TOKENS.PdfReportService, pdf);
   container.register<IotIngestService>(TOKENS.IotIngestService, iot);
-  container.register<MqttBridge>(TOKENS.MqttBridge, mqtt);
 
-  void mqtt.start();
+  const videoJobs = new PrismaVideoJobRepository(prisma);
+  const idempotency = new PrismaIdempotencyRepository(prisma);
+  const jobNotifier = new HttpJobClient();
+  container.register<VideoJobRepository>(TOKENS.VideoJobRepository, videoJobs);
+  container.register<IdempotencyRepository>(TOKENS.IdempotencyRepository, idempotency);
+  container.register<JobNotifier>(TOKENS.JobNotifier, jobNotifier);
 
   cached = container;
   return container;

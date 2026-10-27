@@ -2,23 +2,29 @@ import type {
   AerialImage,
   Device,
   DeviceType,
+  IdempotencyKey,
   Inspection,
   Pothole,
   Prisma,
   Report,
   ReportStatus,
   Telemetry,
+  VideoJob,
+  VideoJobStatus,
 } from "@prisma/client";
 
 export type {
   AerialImage,
   Device,
   DeviceType,
+  IdempotencyKey,
   Inspection,
   Pothole,
   Report,
   ReportStatus,
   Telemetry,
+  VideoJob,
+  VideoJobStatus,
 };
 
 export type ReportWithPotholes = Report & { potholes: Pothole[] };
@@ -202,9 +208,67 @@ export interface IotIngestService {
   ingest(payload: IotIngestPayload): Promise<IotIngestResult>;
 }
 
-export interface MqttBridge {
-  /** Stub: documenta el contrato de suscripción MQTT. */
-  describeTopics(): string[];
-  start(): Promise<void>;
-  stop(): Promise<void>;
+export interface VideoJobRepository {
+  create(data: {
+    id?: string;
+    originalFilename: string;
+    storageDir: string;
+    model: string;
+    contentSha256: string;
+    sizeBytes?: bigint;
+    status?: VideoJobStatus;
+    timeoutAt?: Date;
+  }): Promise<VideoJob>;
+  findById(id: string): Promise<VideoJob | null>;
+  list(params: { page: number; pageSize: number }): Promise<{ items: VideoJob[]; total: number }>;
+  update(
+    id: string,
+    data: {
+      status?: VideoJobStatus;
+      progress?: number;
+      meta?: Prisma.InputJsonValue | null;
+      errorMessage?: string | null;
+      warning?: string | null;
+      sizeBytes?: bigint;
+      timeoutAt?: Date | null;
+    },
+  ): Promise<VideoJob>;
+  delete(id: string): Promise<void>;
+}
+
+export interface IdempotencyRepository {
+  findByKey(key: string): Promise<IdempotencyKey | null>;
+  create(data: {
+    key: string;
+    contentSha256: string;
+    responseStatus: number;
+    responseBody: Prisma.InputJsonValue;
+    jobId?: string;
+  }): Promise<IdempotencyKey>;
+  deleteExpired(): Promise<number>;
+  deleteByKey(key: string): Promise<void>;
+  deleteByJobId(jobId: string): Promise<number>;
+}
+
+export interface JobNotifier {
+  enqueue(params: { jobId: string; path: string; model: string }): Promise<void>;
+}
+
+/**
+ * Roadmap v2 — subida por chunks reanudable (NO implementado).
+ * Contrato previsto: create → append (Upload-Offset) → complete.
+ */
+export interface ResumableUploadSession {
+  createSession(params: {
+    idempotencyKey: string;
+    contentSha256: string;
+    totalBytes: number;
+    filename: string;
+  }): Promise<{ sessionId: string; uploadOffset: number }>;
+  appendChunk(
+    sessionId: string,
+    offset: number,
+    chunk: NodeJS.ReadableStream,
+  ): Promise<{ nextOffset: number }>;
+  complete(sessionId: string): Promise<{ jobId: string; absoluteOriginal: string }>;
 }

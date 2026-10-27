@@ -1,0 +1,60 @@
+name: Build Web
+
+on:
+  push:
+    branches:
+      - "deploy/**"
+    paths:
+      - "apps/web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "deploy/bachedron.javier.tech.service"
+      - "deploy/bachedron.javier.tech.nginx"
+      - ".github/workflows/web-build.yml"
+      - ".github/workflows/web-publish.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.5.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          DATABASE_URL: postgresql://vial:build@127.0.0.1:5432/vial_monitor?schema=public
+          NEXT_PUBLIC_APP_NAME: Monitoreo Vial con Drones
+          NEXT_PUBLIC_MAX_UPLOAD_MB: "8192"
+        run: pnpm --filter web build
+
+  publish:
+    name: Publish Web
+    needs: build
+    uses: ./.github/workflows/web-publish.yml
+    secrets: inherit
+    with:
+      deploy: ${{ startsWith(github.ref, 'refs/heads/deploy/') }}

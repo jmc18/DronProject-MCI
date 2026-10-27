@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 """
-Stub de agente Raspberry Pi: telemetría MQTT + ingest HTTP de imagen.
-No controla el dron; solo envía datos al VPS.
+Stub de agente Raspberry Pi: ingest HTTP de imagen (deprecated).
+El camino soportado es POST /api/videos/upload.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import time
 from pathlib import Path
 
 import requests
-
-try:
-    import paho.mqtt.publish as publish
-except ImportError:  # pragma: no cover
-    publish = None
 
 
 def main() -> None:
@@ -29,8 +23,6 @@ def main() -> None:
         "--token",
         default=os.getenv("IOT_DEVICE_TOKEN", "change_me_device_token"),
     )
-    parser.add_argument("--mqtt-host", default=os.getenv("MQTT_HOST", "localhost"))
-    parser.add_argument("--mqtt-port", type=int, default=int(os.getenv("MQTT_PORT", "1883")))
     parser.add_argument("--battery", type=float, default=87.5)
     args = parser.parse_args()
 
@@ -42,21 +34,6 @@ def main() -> None:
         "rssi": -60,
         "ts": time.time(),
     }
-
-    topic = f"vial/{args.device_key}/telemetry"
-    if publish is not None:
-        try:
-            publish.single(
-                topic,
-                payload=json.dumps(telemetry),
-                hostname=args.mqtt_host,
-                port=args.mqtt_port,
-            )
-            print(f"[mqtt] publicado en {topic}")
-        except Exception as exc:  # noqa: BLE001
-            print(f"[mqtt] omitido: {exc}")
-    else:
-        print("[mqtt] paho-mqtt no instalado; se omite publicación")
 
     data = {
         "deviceKey": args.device_key,

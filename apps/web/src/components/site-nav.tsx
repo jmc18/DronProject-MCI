@@ -2,7 +2,8 @@ import Link from "next/link";
 
 const links = [
   { href: "/", label: "Inicio" },
-  { href: "/recorridos", label: "Recorridos" },
+  { href: "/videos", label: "Vídeos" },
+  { href: "/recorridos", label: "Recorridos (legacy)" },
 ];
 
 export function SiteNav() {
@@ -26,10 +27,10 @@ export function SiteNav() {
             </Link>
           ))}
           <Link
-            href="/recorridos/nuevo"
+            href="/videos/nuevo"
             className="ui-button bg-signal-teal px-3 py-1.5 text-sm font-medium text-asphalt-50"
           >
-            Nuevo recorrido
+            Subir vídeo
           </Link>
         </nav>
       </div>

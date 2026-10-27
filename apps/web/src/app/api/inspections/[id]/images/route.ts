@@ -3,6 +3,7 @@ import { createAppContainer } from "@/di/providers";
 import { TOKENS } from "@/di/tokens";
 import { NotFoundError, OptimisticLockError } from "@/domain/errors";
 import type { AnalyzeImageService, InspectionRepository } from "@/domain/ports";
+import { requireApiKeyHeader } from "@/lib/security/api-key";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,10 +14,20 @@ function collectFiles(form: FormData): File[] {
   return named.filter((entry): entry is File => entry instanceof File && entry.size > 0);
 }
 
+/**
+ * @deprecated Preferir POST /api/videos/upload (pipeline MP4 8K).
+ * Upload de fotografías a una inspección — se retirará en una fase posterior.
+ * Requiere header x-api-key.
+ */
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const auth = requireApiKeyHeader(request);
+  if (!auth.ok) {
+    return NextResponse.json(auth.body, { status: auth.status });
+  }
+
   try {
     const { id } = await context.params;
     const form = await request.formData();

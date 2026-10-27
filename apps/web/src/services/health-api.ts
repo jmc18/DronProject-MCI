@@ -6,7 +6,6 @@ export type HealthSnapshot = {
   checks: {
     database: boolean;
     analyzer: boolean;
-    mqttTopics: string[];
   };
 };
 

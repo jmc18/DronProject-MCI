@@ -7,6 +7,7 @@ type Props = {
   onChange: (files: File[]) => void;
 };
 
+/** @deprecated Preferir /videos/nuevo (MP4). Retiro pendiente Fase 11. */
 export function ImageDropzone({ files, onChange }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const previews = useMemo(

@@ -1,0 +1,18 @@
+[Unit]
+Description=bachedron.javier.tech analyzer
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/javier.tech/bachedron/analyzer
+ExecStart=/var/www/javier.tech/bachedron/analyzer/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=bachedron-analyzer.javier.tech
+User=jmcdeploy
+Group=jmcdeploy
+EnvironmentFile=-/var/www/javier.tech/bachedron/analyzer.env
+Environment=WEB_INTERNAL_URL=http://127.0.0.1:3010
+
+[Install]
+WantedBy=multi-user.target

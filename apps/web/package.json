@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "ensure-db": "node scripts/ensure-db.mjs",
+    "dev": "node scripts/ensure-db.mjs && next dev",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "node scripts/ensure-db.mjs && next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -13,7 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
-    "mqtt": "^5.14.1",
+    "busboy": "^1.6.0",
     "next": "^15.5.25",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.0",
@@ -22,6 +23,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.5",
     "@types/node": "^22.20.4",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

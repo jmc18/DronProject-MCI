@@ -4,6 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  // Uploads grandes van por busboy streaming (no serverActions).
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",

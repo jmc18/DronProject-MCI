@@ -3,14 +3,22 @@ import { createAppContainer } from "@/di/providers";
 import { TOKENS } from "@/di/tokens";
 import { NotFoundError, OptimisticLockError } from "@/domain/errors";
 import type { AnalyzeImageService, InspectionRepository } from "@/domain/ports";
+import { requireApiKeyHeader } from "@/lib/security/api-key";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Análisis manual: guarda imagen, crea o reutiliza Inspection y llama al analyzer.
+ * @deprecated Preferir POST /api/videos/upload (pipeline MP4 8K).
+ * Análisis manual por imagen — se retirará en una fase posterior.
+ * Requiere header x-api-key.
  */
 export async function POST(request: Request) {
+  const auth = requireApiKeyHeader(request);
+  if (!auth.ok) {
+    return NextResponse.json(auth.body, { status: auth.status });
+  }
+
   try {
     const form = await request.formData();
     const file = form.get("file");

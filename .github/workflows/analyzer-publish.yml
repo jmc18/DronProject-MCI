@@ -1,0 +1,71 @@
+name: Publish Analyzer
+
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        description: Copy the analyzer to the VPS and restart the worker
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        if: inputs.deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          port="${VPS_PORT:-22}"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javier.tech/bachedron/analyzer"
+          rsync -az --delete \
+            --no-perms --no-owner --no-group \
+            --filter 'protect .venv/' \
+            --filter 'protect models/' \
+            --filter 'protect tmp/' \
+            --filter 'protect uploads/' \
+            --filter 'protect data/' \
+            --filter 'protect .env' \
+            --exclude '.venv/' \
+            --exclude 'models/' \
+            --exclude 'tmp/' \
+            --exclude 'uploads/' \
+            --exclude 'data/' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude '__pycache__/' \
+            -e "ssh -p $port -i ~/.ssh/id_ed25519" \
+            services/analyzer/ "$VPS_USER@$VPS_HOST:/var/www/javier.tech/bachedron/analyzer/"
+          ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "bash -s" <<'EOF'
+          set -euo pipefail
+          if [ ! -f /var/www/javier.tech/bachedron/analyzer.env ]; then
+            echo "Falta /var/www/javier.tech/bachedron/analyzer.env (INTERNAL_TOKEN, YOLO_WEIGHTS_PATH)." >&2
+            exit 1
+          fi
+          cd /var/www/javier.tech/bachedron/analyzer
+          if [ ! -x .venv/bin/python ]; then
+            python3 -m venv .venv
+          fi
+          .venv/bin/pip install -r requirements.txt
+          if ! .venv/bin/python -c "import ultralytics" >/dev/null 2>&1; then
+            .venv/bin/pip install -r requirements-ml.txt
+          fi
+          sudo -n /usr/bin/systemctl restart bachedron-analyzer.javier.tech.service
+          EOF
