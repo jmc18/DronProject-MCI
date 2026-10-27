@@ -103,6 +103,12 @@ jobs:
             apps/web/.next/standalone/ "$VPS_USER@$VPS_HOST:/var/www/javiermc/bachedron/web/"
           ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "bash -s" <<'EOF'
           set -euo pipefail
+          # SSH no carga nvm. /usr/bin/node es el 18 del sistema; el 22 está aquí.
+          NODE_BIN=/home/jmcdeploy/.nvm/versions/node/v22.23.4/bin/node
+          if [ ! -x "$NODE_BIN" ]; then
+            echo "No está Node 22 en $NODE_BIN" >&2
+            exit 1
+          fi
           if [ ! -f /var/www/javiermc/bachedron/web.env ]; then
             echo "Falta /var/www/javiermc/bachedron/web.env (DATABASE_URL, INTERNAL_TOKEN, claves de upload)." >&2
             exit 1
@@ -112,6 +118,6 @@ jobs:
           . /var/www/javiermc/bachedron/web.env
           set +a
           cd /var/www/javiermc/bachedron/web/apps/web
-          /usr/bin/node prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
+          "$NODE_BIN" prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
           sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
           EOF
