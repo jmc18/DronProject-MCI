@@ -63,5 +63,11 @@ export async function POST(
     warning: body.warning,
   });
 
-  return NextResponse.json({ success: true, job: updated });
+  return NextResponse.json({
+    success: true,
+    job: {
+      ...updated,
+      sizeBytes: updated.sizeBytes != null ? updated.sizeBytes.toString() : null,
+    },
+  });
 }
