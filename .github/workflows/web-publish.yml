@@ -51,6 +51,49 @@ jobs:
           fi
           mkdir -p "$standalone/apps/web/prisma"
           cp -a apps/web/prisma/. "$standalone/apps/web/prisma/"
+          # CLI de Prisma ya instalado en el runner. En el VPS solo existe
+          # /usr/bin/node (igual que javiermc.tech); npx no está en el PATH de SSH.
+          CLI_DEST="$standalone/apps/web/prisma-cli" node --input-type=module <<'JS'
+          import { createRequire } from "node:module";
+          import fs from "node:fs";
+          import path from "node:path";
+
+          const destRoot = process.env.CLI_DEST;
+          const nodeModules = path.join(destRoot, "node_modules");
+          fs.mkdirSync(nodeModules, { recursive: true });
+
+          const fromWeb = createRequire(path.resolve("apps/web/package.json"));
+          const seen = new Set();
+
+          function copyPackage(packageJsonPath) {
+            const realJson = fs.realpathSync(packageJsonPath);
+            if (seen.has(realJson)) return;
+            seen.add(realJson);
+            const pkg = JSON.parse(fs.readFileSync(realJson, "utf8"));
+            const destDir = path.join(nodeModules, pkg.name);
+            fs.mkdirSync(path.dirname(destDir), { recursive: true });
+            fs.cpSync(path.dirname(realJson), destDir, { recursive: true, dereference: true });
+            const requireFromPackage = createRequire(realJson);
+            const deps = [
+              ...Object.keys(pkg.dependencies ?? {}),
+              ...Object.keys(pkg.optionalDependencies ?? {}),
+            ];
+            for (const dep of deps) {
+              try {
+                copyPackage(requireFromPackage.resolve(`${dep}/package.json`));
+              } catch (error) {
+                console.warn(`prisma-cli: omito ${dep}: ${error.message}`);
+              }
+            }
+          }
+
+          copyPackage(fromWeb.resolve("prisma/package.json"));
+          const entry = path.join(nodeModules, "prisma/build/index.js");
+          if (!fs.existsSync(entry)) {
+            throw new Error(`No está el CLI de Prisma en ${entry}`);
+          }
+          console.log(`prisma-cli listo en ${destRoot}`);
+          JS
 
       - name: Deploy to VPS
         if: inputs.deploy
@@ -68,6 +111,7 @@ jobs:
           ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
           ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javiermc/bachedron/web /var/www/javiermc/bachedron/data/jobs"
           rsync -az --delete \
+            --no-times --omit-dir-times \
             --no-perms --no-owner --no-group \
             --filter 'protect uploads/' \
             --filter 'protect apps/web/uploads/' \
@@ -90,7 +134,6 @@ jobs:
           . /var/www/javiermc/bachedron/web.env
           set +a
           cd /var/www/javiermc/bachedron/web/apps/web
-          npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
+          /usr/bin/node prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
           sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
           EOF
-
