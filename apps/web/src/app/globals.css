@@ -12,9 +12,15 @@
   --font-orbitron: "Orbitron", sans-serif;
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   font-family: var(--font-orbitron);
   color: var(--ink);
+  max-width: 100%;
+  overflow-x: clip;
   background:
     radial-gradient(1200px 600px at 10% -10%, rgba(31, 138, 122, 0.22), transparent 55%),
     radial-gradient(900px 500px at 90% 0%, rgba(232, 163, 23, 0.12), transparent 50%),

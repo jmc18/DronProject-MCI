@@ -6,6 +6,18 @@ import type { VideoJobRepository } from "@/domain/ports";
 
 export const dynamic = "force-dynamic";
 
+function jobMeta(raw: unknown) {
+  const meta = (raw ?? {}) as Record<string, unknown>;
+  return {
+    res:
+      typeof meta.width === "number" && typeof meta.height === "number"
+        ? `${meta.width}×${meta.height}`
+        : "—",
+    codec: typeof meta.codec === "string" ? meta.codec : "—",
+    dur: typeof meta.duration_sec === "number" ? `${meta.duration_sec.toFixed(1)}s` : "—",
+  };
+}
+
 function formatBytes(raw: bigint | null | undefined): string {
   if (raw == null) return "—";
   const n = Number(raw);
@@ -28,13 +40,13 @@ export default async function VideosPage({
   const pages = Math.max(1, Math.ceil(total / 15));
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-orbitron text-xs uppercase tracking-[0.2em] text-signal-teal">
             Jobs de vídeo
           </p>
-          <h1 className="mt-2 font-orbitron text-3xl text-asphalt-50">Análisis MP4</h1>
+          <h1 className="mt-2 font-orbitron text-2xl text-asphalt-50 sm:text-3xl">Análisis MP4</h1>
           <p className="mt-2 max-w-xl text-[color:var(--muted)]">
             Listado paginado (máx. 15). El procesamiento 8K puede tardar varios minutos.
           </p>
@@ -47,8 +59,55 @@ export default async function VideosPage({
         </Link>
       </div>
 
-      <div className="overflow-x-auto border border-white/10">
-        <table className="w-full min-w-[720px] text-left text-sm">
+      <ul className="space-y-3 md:hidden">
+        {items.length === 0 ? (
+          <li className="border border-white/10 px-4 py-8 text-center text-sm text-[color:var(--muted)]">
+            No hay jobs todavía.
+          </li>
+        ) : (
+          items.map((job) => {
+            const meta = jobMeta(job.meta);
+            return (
+              <li key={job.id} className="space-y-3 border border-white/10 p-4 text-sm">
+                <p className="break-words font-medium">{job.originalFilename}</p>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-[color:var(--muted)]">
+                  <div>
+                    <dt>Estado</dt>
+                    <dd className="text-asphalt-50">{job.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Progreso</dt>
+                    <dd className="text-asphalt-50">{Math.round(job.progress)}%</dd>
+                  </div>
+                  <div>
+                    <dt>Tamaño</dt>
+                    <dd className="text-asphalt-50">{formatBytes(job.sizeBytes)}</dd>
+                  </div>
+                  <div>
+                    <dt>Meta</dt>
+                    <dd className="break-words text-asphalt-50">
+                      {meta.res} · {meta.codec} · {meta.dur}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link href={`/videos/${job.id}`} className="text-signal-teal hover:underline">
+                    Ver
+                  </Link>
+                  <JobActions
+                    jobId={job.id}
+                    filename={job.originalFilename}
+                    busy={job.status === "PROCESSING" || job.status === "QUEUED" || job.status === "VALIDATING"}
+                  />
+                </div>
+              </li>
+            );
+          })
+        )}
+      </ul>
+
+      <div className="hidden overflow-x-auto border border-white/10 md:block">
+        <table className="w-full text-left text-sm">
           <thead className="bg-white/5 text-[color:var(--muted)]">
             <tr>
               <th className="px-3 py-2 font-medium">Archivo</th>
@@ -68,23 +127,14 @@ export default async function VideosPage({
               </tr>
             ) : (
               items.map((job) => {
-                const meta = (job.meta ?? {}) as Record<string, unknown>;
-                const res =
-                  typeof meta.width === "number" && typeof meta.height === "number"
-                    ? `${meta.width}×${meta.height}`
-                    : "—";
-                const codec = typeof meta.codec === "string" ? meta.codec : "—";
-                const dur =
-                  typeof meta.duration_sec === "number"
-                    ? `${meta.duration_sec.toFixed(1)}s`
-                    : "—";
+                const meta = jobMeta(job.meta);
                 return (
                   <tr key={job.id} className="border-t border-white/10">
-                    <td className="px-3 py-2">{job.originalFilename}</td>
+                    <td className="max-w-[16rem] break-words px-3 py-2">{job.originalFilename}</td>
                     <td className="px-3 py-2">{job.status}</td>
                     <td className="px-3 py-2">{Math.round(job.progress)}%</td>
                     <td className="px-3 py-2 text-[color:var(--muted)]">
-                      {res} · {codec} · {dur}
+                      {meta.res} · {meta.codec} · {meta.dur}
                     </td>
                     <td className="px-3 py-2">{formatBytes(job.sizeBytes)}</td>
                     <td className="px-3 py-2">
@@ -107,7 +157,7 @@ export default async function VideosPage({
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-[color:var(--muted)]">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[color:var(--muted)]">
         <span>
           Página {page} / {pages} · {total} jobs
         </span>

@@ -4,13 +4,17 @@ After=network.target
 
 [Service]
 WorkingDirectory=/var/www/javiermc/bachedron/analyzer
-ExecStart=/var/www/javiermc/bachedron/analyzer/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010
+ExecStart=/var/www/javiermc/bachedron/analyzer/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010 --log-level info --access-log
 Restart=always
 RestartSec=10
 KillSignal=SIGINT
 SyslogIdentifier=bachedron-analyzer.javier.tech
+LogsDirectory=bachedron
+StandardOutput=append:/var/log/bachedron/analyzer.log
+StandardError=append:/var/log/bachedron/analyzer.log
 User=jmcdeploy
 Group=jmcdeploy
+Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=-/var/www/javiermc/bachedron/analyzer.env
 Environment=WEB_INTERNAL_URL=http://127.0.0.1:3010
 

@@ -64,11 +64,11 @@ export default function NuevoVideoPage() {
   };
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
+    <main className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-10">
       <Link href="/videos" className="text-sm text-signal-teal hover:underline">
         ← Jobs
       </Link>
-      <h1 className="mt-4 font-orbitron text-3xl text-asphalt-50">Subir vídeo MP4</h1>
+      <h1 className="mt-4 font-orbitron text-2xl text-asphalt-50 sm:text-3xl">Subir vídeo MP4</h1>
       <p className="mt-3 text-[color:var(--muted)]">
         Subida local desde este equipo, hasta {maxMb} MB. El procesamiento 8K puede tardar.
         La API key y la firma HMAC las exigen solo los envíos de la Raspberry Pi y el ESP32.
@@ -80,7 +80,7 @@ export default function NuevoVideoPage() {
           <input
             type="file"
             accept="video/mp4,.mp4"
-            className="mt-1 block w-full text-sm"
+            className="mt-1 block w-full max-w-full text-sm"
             onChange={(ev) => setFile(ev.target.files?.[0] ?? null)}
           />
         </label>

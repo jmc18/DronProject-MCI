@@ -9,14 +9,14 @@ const links = [
 export function SiteNav() {
   return (
     <header className="border-b border-white/10 bg-asphalt-950/60 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <Link
           href="/"
-          className="font-orbitron text-sm uppercase tracking-[0.18em] text-signal-teal"
+          className="font-orbitron text-xs uppercase tracking-[0.14em] text-signal-teal sm:text-sm sm:tracking-[0.18em]"
         >
           DronProject-MCI
         </Link>
-        <nav className="flex items-center gap-5 text-sm">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {links.map((link) => (
             <Link
               key={link.href}

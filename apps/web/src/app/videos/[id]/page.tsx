@@ -23,12 +23,12 @@ export default async function VideoJobPage({
   const report = (meta.report ?? {}) as Record<string, unknown>;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 space-y-8">
+    <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 sm:py-10">
       <div>
         <Link href="/videos" className="text-sm text-signal-teal hover:underline">
           ← Jobs
         </Link>
-        <h1 className="mt-3 font-orbitron text-3xl text-asphalt-50">{job.originalFilename}</h1>
+        <h1 className="mt-3 break-words font-orbitron text-2xl text-asphalt-50 sm:text-3xl">{job.originalFilename}</h1>
         <p className="mt-2 text-[color:var(--muted)]">
           {job.status} · modelo {job.model}
           {job.warning ? ` · aviso: ${job.warning}` : ""}

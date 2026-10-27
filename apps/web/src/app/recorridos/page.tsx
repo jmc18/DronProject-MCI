@@ -13,11 +13,11 @@ export default async function RecorridosPage() {
   const items = (await inspections.list()).map(toInspectionListItemDto);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.18em] text-signal-teal">Análisis</p>
-          <h1 className="mt-2 font-display text-4xl text-asphalt-50">Recorridos</h1>
+          <h1 className="mt-2 font-display text-3xl text-asphalt-50 sm:text-4xl">Recorridos</h1>
           <p className="mt-2 text-[color:var(--muted)]">
             Revisa fotografías, detecciones YOLO e informes de cada inspección.
           </p>

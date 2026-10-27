@@ -9,6 +9,9 @@ Restart=always
 RestartSec=10
 KillSignal=SIGINT
 SyslogIdentifier=bachedron.javier.tech
+LogsDirectory=bachedron
+StandardOutput=append:/var/log/bachedron/web.log
+StandardError=append:/var/log/bachedron/web.log
 User=jmcdeploy
 Group=jmcdeploy
 Environment=NODE_ENV=production

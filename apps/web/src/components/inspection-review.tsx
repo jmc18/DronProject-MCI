@@ -44,7 +44,7 @@ export function InspectionReview({ inspection }: { inspection: InspectionReviewD
       <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.18em] text-signal-teal">Recorrido</p>
-          <h1 className="mt-2 font-display text-4xl text-asphalt-50">{view.title}</h1>
+          <h1 className="mt-2 break-words font-display text-3xl text-asphalt-50 sm:text-4xl">{view.title}</h1>
           <p className="mt-2 text-[color:var(--muted)]">
             {view.location || "Ubicación no indicada"} · {created}
           </p>
