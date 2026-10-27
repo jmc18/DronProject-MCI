@@ -96,12 +96,12 @@ jobs:
           rsync -az --delete \
             --no-times --omit-dir-times \
             --no-perms --no-owner --no-group \
-            --filter 'protect uploads/' \
-            --filter 'protect apps/web/uploads/' \
-            --filter 'protect data/' \
-            --exclude 'uploads/' \
-            --exclude 'apps/web/uploads/' \
-            --exclude 'data/' \
+            --filter 'protect /uploads/' \
+            --filter 'protect /apps/web/uploads/' \
+            --filter 'protect /data/' \
+            --exclude '/uploads/' \
+            --exclude '/apps/web/uploads/' \
+            --exclude '/data/' \
             --exclude '.env' \
             --exclude '.env.*' \
             -e "ssh -p $port -i ~/.ssh/id_ed25519" \
