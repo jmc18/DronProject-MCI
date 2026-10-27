@@ -69,3 +69,4 @@ jobs:
           fi
           sudo -n /usr/bin/systemctl restart bachedron-analyzer.javier.tech.service
           EOF
+

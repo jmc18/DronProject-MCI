@@ -93,3 +93,4 @@ jobs:
           npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
           sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
           EOF
+
