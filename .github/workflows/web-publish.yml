@@ -62,8 +62,15 @@ jobs:
             process.stdout.write(require('prisma/package.json').version);
           ")"
           printf '%s\n' '{ "name": "prisma-cli", "private": true }' > "$cli/package.json"
-          printf '%s\n' 'package-import-method=copy' > "$cli/.npmrc"
-          pnpm add --ignore-workspace --dir "$cli" "prisma@${prisma_version}"
+          # pnpm 12 solo lee allowBuilds desde pnpm-workspace.yaml. Sin esto
+          # ignora el postinstall de Prisma y falla con ERR_PNPM_IGNORED_BUILDS.
+          cat > "$cli/pnpm-workspace.yaml" <<'EOF'
+          packageImportMethod: copy
+          allowBuilds:
+            "@prisma/engines": true
+            prisma: true
+          EOF
+          pnpm add --dir "$cli" "prisma@${prisma_version}"
           node "$cli/node_modules/prisma/build/index.js" --version
 
       - name: Deploy to VPS
