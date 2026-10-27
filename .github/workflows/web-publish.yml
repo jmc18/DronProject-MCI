@@ -51,26 +51,29 @@ jobs:
           fi
           mkdir -p "$standalone/apps/web/prisma"
           cp -a apps/web/prisma/. "$standalone/apps/web/prisma/"
-          # Instalación aparte con pnpm. Hay que subir el node_modules completo,
-          # incluido .pnpm: los enlaces son relativos y así llega @prisma/debug.
+          # npm, no pnpm: el .pnpm que sube rsync llega incompleto
+          # (fast-check sin ./data/GraphemeRanges).
           cli="$standalone/apps/web/prisma-cli"
-          mkdir -p "$cli"
+          rm -rf "$cli"
           prisma_version="$(node --input-type=module -e "
             import { createRequire } from 'node:module';
             import path from 'node:path';
             const require = createRequire(path.resolve('apps/web/package.json'));
             process.stdout.write(require('prisma/package.json').version);
           ")"
-          printf '%s\n' '{ "name": "prisma-cli", "private": true }' > "$cli/package.json"
-          # pnpm 12 solo lee allowBuilds desde pnpm-workspace.yaml. Sin esto
-          # ignora el postinstall de Prisma y falla con ERR_PNPM_IGNORED_BUILDS.
-          cat > "$cli/pnpm-workspace.yaml" <<'EOF'
-          packageImportMethod: copy
-          allowBuilds:
-            "@prisma/engines": true
-            prisma: true
-          EOF
-          pnpm add --dir "$cli" "prisma@${prisma_version}"
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            const dest = process.argv[1];
+            const version = process.argv[2];
+            fs.mkdirSync(dest, { recursive: true });
+            fs.writeFileSync(dest + '/package.json', JSON.stringify({
+              name: 'prisma-cli',
+              private: true,
+              dependencies: { prisma: version },
+            }, null, 2) + '\n');
+          " "$cli" "$prisma_version"
+          npm install --prefix "$cli" --omit=dev --no-audit --no-fund
+          test -f "$cli/node_modules/fast-check/lib/arbitrary/_internals/data/GraphemeRanges.js"
           node "$cli/node_modules/prisma/build/index.js" --version
 
       - name: Deploy to VPS
