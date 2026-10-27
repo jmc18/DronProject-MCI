@@ -73,7 +73,9 @@ jobs:
             }, null, 2) + '\n');
           " "$cli" "$prisma_version"
           npm install --prefix "$cli" --omit=dev --no-audit --no-fund
-          test -f "$cli/node_modules/fast-check/lib/arbitrary/_internals/data/GraphemeRanges.js"
+          unit="$(find "$cli/node_modules" -path '*/fast-check/lib/arbitrary/_internals/StringUnitArbitrary.js' -print -quit)"
+          test -n "$unit"
+          test -f "$(dirname "$unit")/data/GraphemeRanges.js"
           node "$cli/node_modules/prisma/build/index.js" --version
 
       - name: Deploy to VPS
