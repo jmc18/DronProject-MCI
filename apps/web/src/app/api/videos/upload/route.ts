@@ -7,7 +7,7 @@ import { assertEnoughDisk } from "@/lib/disk";
 import { completeVideoUpload, uploadJson } from "@/lib/complete-video-upload";
 import { getMaxUploadBytes } from "@/lib/env";
 import { requireApiKeyHeader } from "@/lib/security/api-key";
-import { isUuid, verifyUploadHmac } from "@/lib/security/hmac";
+import { isUuid } from "@/lib/security/hmac";
 import { checkRateLimit, clientIp } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
@@ -16,8 +16,8 @@ export const maxDuration = 3600;
 
 /**
  * Contrato de dispositivos (Raspberry Pi / ESP32).
- * Exige x-api-key, firma HMAC e Idempotency-Key.
- * La UI local usa POST /api/videos/upload/manual y no envía secretos.
+ * Exige x-api-key, Idempotency-Key (UUID) y el archivo multipart `video`.
+ * La UI local usa POST /api/videos/upload/manual y no envía la API key.
  */
 export async function POST(request: Request) {
   const apiKey = request.headers.get("x-api-key") ?? "";
@@ -31,13 +31,9 @@ export async function POST(request: Request) {
     return NextResponse.json(auth.body, { status: auth.status });
   }
 
-  const hmac = verifyUploadHmac(request);
-  if (!hmac.ok) {
-    return uploadJson(401, { success: false, message: hmac.message });
-  }
-
-  if (!isUuid(hmac.idempotencyKey)) {
-    return uploadJson(400, { success: false, message: "El campo video es requerido" });
+  const idempotencyKey = request.headers.get("idempotency-key") ?? "";
+  if (!isUuid(idempotencyKey)) {
+    return uploadJson(400, { success: false, message: "Idempotency-Key debe ser un UUID" });
   }
 
   const contentLength = request.headers.get("content-length");
@@ -61,25 +57,19 @@ export async function POST(request: Request) {
   const container = createAppContainer();
   const idempotency = container.resolve<IdempotencyRepository>(TOKENS.IdempotencyRepository);
 
-  const existing = await idempotency.findByKey(hmac.idempotencyKey);
+  const existing = await idempotency.findByKey(idempotencyKey);
   if (existing && existing.expiresAt >= new Date()) {
-    if (existing.contentSha256 !== hmac.contentSha256) {
-      return uploadJson(409, {
-        success: false,
-        message: "Idempotency-Key reutilizada con contenido distinto",
-      });
-    }
     return NextResponse.json(existing.responseBody as object, {
       status: existing.responseStatus,
     });
   }
   if (existing && existing.expiresAt < new Date()) {
-    await idempotency.deleteByKey(hmac.idempotencyKey);
+    await idempotency.deleteByKey(idempotencyKey);
   }
 
   try {
-    const upload = await streamVideoUpload(request, hmac.contentSha256);
-    return completeVideoUpload(upload, hmac.idempotencyKey);
+    const upload = await streamVideoUpload(request);
+    return completeVideoUpload(upload, idempotencyKey);
   } catch (err) {
     if (err instanceof UploadError) {
       if (err.code === "TOO_LARGE") {
