@@ -51,6 +51,20 @@ jobs:
           fi
           mkdir -p "$standalone/apps/web/prisma"
           cp -a apps/web/prisma/. "$standalone/apps/web/prisma/"
+          # Instalación aparte con pnpm. Hay que subir el node_modules completo,
+          # incluido .pnpm: los enlaces son relativos y así llega @prisma/debug.
+          cli="$standalone/apps/web/prisma-cli"
+          mkdir -p "$cli"
+          prisma_version="$(node --input-type=module -e "
+            import { createRequire } from 'node:module';
+            import path from 'node:path';
+            const require = createRequire(path.resolve('apps/web/package.json'));
+            process.stdout.write(require('prisma/package.json').version);
+          ")"
+          printf '%s\n' '{ "name": "prisma-cli", "private": true }' > "$cli/package.json"
+          printf '%s\n' 'package-import-method=copy' > "$cli/.npmrc"
+          pnpm add --ignore-workspace --dir "$cli" "prisma@${prisma_version}"
+          node "$cli/node_modules/prisma/build/index.js" --version
 
       - name: Deploy to VPS
         if: inputs.deploy
@@ -68,6 +82,7 @@ jobs:
           ssh-keyscan -p "$port" -H "$VPS_HOST" >> ~/.ssh/known_hosts
           ssh -p "$port" -i ~/.ssh/id_ed25519 "$VPS_USER@$VPS_HOST" "mkdir -p /var/www/javiermc/bachedron/web /var/www/javiermc/bachedron/data/jobs"
           rsync -az --delete \
+            --no-times --omit-dir-times \
             --no-perms --no-owner --no-group \
             --filter 'protect uploads/' \
             --filter 'protect apps/web/uploads/' \
@@ -90,6 +105,6 @@ jobs:
           . /var/www/javiermc/bachedron/web.env
           set +a
           cd /var/www/javiermc/bachedron/web/apps/web
-          npx --yes prisma@6.19.3 migrate deploy --schema prisma/schema.prisma
+          /usr/bin/node prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
           sudo -n /usr/bin/systemctl restart bachedron.javier.tech.service
           EOF
