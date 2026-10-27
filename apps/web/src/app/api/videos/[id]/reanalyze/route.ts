@@ -4,6 +4,7 @@ import { TOKENS } from "@/di/tokens";
 import type { JobNotifier, VideoJobRepository } from "@/domain/ports";
 import { getJobTimeoutMinutes } from "@/lib/env";
 import { originalVideoPath, removeGeneratedArtifacts } from "@/lib/job-files";
+import { describeError, logError, logInfo } from "@/lib/log";
 import fs from "fs/promises";
 
 export const runtime = "nodejs";
@@ -14,6 +15,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  logInfo("reanalyze.start", { jobId: id });
   const container = createAppContainer();
   const jobs = container.resolve<VideoJobRepository>(TOKENS.VideoJobRepository);
   const notifier = container.resolve<JobNotifier>(TOKENS.JobNotifier);
@@ -51,16 +53,20 @@ export async function POST(
 
   try {
     await notifier.enqueue({ jobId: job.id, path: original, model: job.model });
-  } catch {
+  } catch (err) {
+    const detail = describeError(err);
+    logError("reanalyze.worker", err, { jobId: id });
     await jobs.update(id, {
       status: "FAILED",
-      errorMessage: "No se pudo notificar al worker",
+      errorMessage: detail,
     });
+    // 503, no 502: Cloudflare sustituye el 502 por su página y oculta este JSON.
     return NextResponse.json(
-      { success: false, message: "No se pudo notificar al worker" },
-      { status: 502 },
+      { success: false, message: detail },
+      { status: 503 },
     );
   }
 
+  logInfo("reanalyze.queued", { jobId: id });
   return NextResponse.json({ success: true, message: "Análisis encolado de nuevo" });
 }

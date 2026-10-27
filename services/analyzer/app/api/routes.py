@@ -97,6 +97,7 @@ def enqueue_job(req: JobRequest) -> dict:
 
     thread = threading.Thread(target=_run_job, args=(req,), daemon=True)
     thread.start()
+    logger.info("job encolado id=%s model=%s path=%s", req.jobId, req.model, req.path)
     return {"ok": True, "jobId": req.jobId, "status": "QUEUED"}
 
 
